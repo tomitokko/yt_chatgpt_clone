@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat System</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    .chat-container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    .chat-history {
+      flex-grow: 1;
+      overflow-y: auto;
+      padding: 1rem;
+      background-color: white;
+      border-radius: 0.5rem;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    .chat-message {
+      display: flex;
+      margin-bottom: 0.5rem;
+    }
+    .chat-message.ai {
+      justify-content: flex-start;
+    }
+    .chat-message.user {
+      justify-content: flex-end;
+    }
+    .message {
+      max-width: 70%;
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+    }
+    .message.ai {
+      background-color: #bfdbfe;
+      text-align: left;
+    }
+    .message.user {
+      background-color: #60a5fa;
+      text-align: right;
+      color: white;
+    }
+    .input-container {
+      display: flex;
+      padding: 1rem;
+      background-color: #f1f5f9;
+      border-top: 1px solid #e5e7eb;
+    }
+  </style>
+</head>
+<body class="bg-blue-50">
+  <div class="chat-container">
+    <header class="bg-blue-600 text-white p-4 text-center">
+      <h1 class="text-2xl">Chat AI</h1>
+    </header>
+    <main class="flex flex-col flex-grow p-4">
+      <div id="chat-history" class="chat-history mb-4">
+        <!-- Chat history will be dynamically inserted here -->
+      </div>
+      <div class="input-container">
+        <form method="POST" id="chat-form" class="flex w-full">
+          {% csrf_token %}
+          <input id="chat-input" type="text" class="flex-grow p-2 border border-blue-300 rounded-l" placeholder="Type your message here...">
+          <button type="submit" class="bg-blue-600 text-white p-2 rounded-r">Send</button>
+        </form>
+      </div>
+    </main>
+  </div>
+
+
+  <script>
+    const chatForm = document.getElementById('chat-form');
+    const chatInput = document.getElementById('chat-input');
+    const chatHistory = document.getElementById('chat-history');
+
+    chatForm.addEventListener('submit', function(event) {
+      event.preventDefault();
+      const message = chatInput.value.trim()
+      if (message) {
+        const messageWrapper = document.createElement('div');
+        messageWrapper.classList.add('chat-message', 'user');
+
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('message', 'user');
+        messageElement.textContent = message;
+
+        messageWrapper.appendChild(messageElement);
+        chatHistory.appendChild(messageWrapper);
+        chatInput.value = '';
+
+        fetch('response', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            'csrfmiddlewaretoken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'message': message
+          })
+        })
+          .then(response => response.json())
+          .then(data => {
+            const response = data.response;
+            const messageWrapper2 = document.createElement('div');
+            messageWrapper2.classList.add('chat-message', 'ai');
+
+            const messageElement2 = document.createElement('div');
+            messageElement2.classList.add('message', 'ai');
+            messageElement2.textContent = response;
+
+            messageWrapper2.appendChild(messageElement2);
+            chatHistory.appendChild(messageWrapper2);
+          })
+
+
+        chatHistory.scrollTop = chatHistory.scrollHeight;
+      }
+    })
+  </script>
+</body>
+</html>
